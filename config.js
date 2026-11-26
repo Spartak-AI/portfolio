@@ -31,7 +31,7 @@ window.SITE = {
       nichoCurto: "Кухни",
       url: "https://spartak-ai.github.io/dastar/",
       video: "assets/cases/kitchen.mp4",
-      poster: "assets/cases/kitchen.jpg",
+      poster: "assets/cases/kitchen-pronta.jpg",
       jtbd: "Получить кухню под свои размеры и привычки, а не подгонять жизнь под стандартные модули.",
       cjm: "Вопрос «сколько это будет стоить». Сайт отвечает готовыми проектами с ценой и калькулятором.",
     },
