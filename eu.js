@@ -131,7 +131,7 @@
       const q = Math.round(seg(p, 0, fimOrb) * (quadros.length - 1));
       const im = quadros[q];
       if (q !== ultimoQ && im.complete && im.naturalWidth) { ctx.drawImage(im, 0, 0, tela.width, tela.height); ultimoQ = q; }
-      tela.style.opacity = (1 - seg(p, fimOrb - 0.015, fimOrb + 0.02)).toFixed(3);
+      tela.style.opacity = (1 - seg(p, fimOrb - 0.002, fimOrb + 0.002)).toFixed(3);   // почти мгновенная смена — без ореола от наложения
     } else tela.style.opacity = "0";
     // 2) карточки слетаются в шар, когда камера вышла во фронт
     const chega = 1;
