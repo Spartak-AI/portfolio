@@ -28,6 +28,7 @@ a { color: inherit; }
 h1, h2, h3 {
   font-family: var(--font-title); font-weight: 600; text-transform: uppercase;
   line-height: 1.2; letter-spacing: .005em; margin: 0 0 .45em;   /* место для точек Ё и краткой Й в заглавных */
+  text-wrap: balance;   /* строки примерно равной длины — без одиноких слов на последней строке */
 }
 h1 { font-size: clamp(30px, 4.3vw, 64px); overflow-wrap: anywhere; }
 h2 { font-size: clamp(32px, 4.2vw, 64px); }
