@@ -228,6 +228,7 @@
             <span class="janela-url">${esc(dominio)}</span>
           </div>
           <div class="janela-tela">
+            <img class="tela-poster" src="${esc(c.poster)}" alt="" loading="lazy" decoding="async">
             <video muted loop playsinline preload="none" poster="${esc(c.poster)}" aria-label="Запись прокрутки сайта ${esc(c.nome)}">
               <source src="${esc(c.video)}" type="video/mp4">
             </video>
@@ -249,6 +250,11 @@
     }).join("");
 
     // видео играет, только пока карточка на экране
+    // видео грузится заранее (за экран до карточки) и проявляется поверх картинки, только когда реально пошло
+    const pre = new IntersectionObserver((es) => es.forEach((e) => {
+      const v = e.target;
+      if (e.isIntersecting && v.preload === "none") { v.preload = "auto"; v.load(); pre.unobserve(v); }
+    }), { rootMargin: "100% 0px" });
     const vio = new IntersectionObserver((es) => es.forEach((e) => {
       const v = e.target;
       if (e.isIntersecting) {
@@ -256,7 +262,10 @@
         if (!reduzir) v.play().catch(() => {});
       } else v.pause();
     }), { threshold: 0.25 });
-    pilha.querySelectorAll("video").forEach((v) => vio.observe(v));
+    pilha.querySelectorAll("video").forEach((v) => {
+      v.addEventListener("playing", () => v.classList.add("pronto"), { once: true });
+      pre.observe(v); vio.observe(v);
+    });
   }
 
   /* ── 03 · Ниши ──────────────────────────────────────── */

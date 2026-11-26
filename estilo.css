@@ -301,6 +301,8 @@ p { margin: 0 0 1em; }
 }
 .janela-tela { position: relative; aspect-ratio: 1280 / 562; background: #111; }
 .janela-tela video, .janela-tela img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.caso .janela-tela video { opacity: 0; transition: opacity .5s; }
+.caso .janela-tela video.pronto { opacity: 1; }
 
 .caso-info h3 { font-size: clamp(30px, 3.4vw, 52px); margin-bottom: .2em; }
 .caso-nicho { font: 600 13px/1.3 var(--font-text); letter-spacing: .1em; text-transform: uppercase; color: var(--acento); margin-bottom: 8px; display: block; }
