@@ -19,12 +19,20 @@
 
   // где стоит человек в кадре (доли кадра, замерено по силуэту)
   const CENA = {
-    v: { src: "assets/eu/eu_v.mp4", poster: "assets/eu/eu_v.jpg", mascara: "assets/eu/mascara_v.png", ar: 0.556, cx: 0.505, topo: 0.284, pes: 0.871 },
+    v: { orbita: { pasta: "assets/eu/orbita_v/", n: 61, ext: "webp" }, src: "assets/eu/eu_v.mp4", poster: "assets/eu/eu_v.jpg", mascara: "assets/eu/mascara_v.png", ar: 0.556, cx: 0.505, topo: 0.284, pes: 0.871 },
     h: { src: "assets/eu/eu_h.mp4", poster: "assets/eu/eu_h.jpg", mascara: "assets/eu/mascara_h.png", ar: 1.7985, cx: 0.498, topo: 0.197, pes: 0.954 },
   };
 
   const mundo = raiz.querySelector("[data-mundo]");
   const video = raiz.querySelector("[data-eu-video]");
+  const tela = raiz.querySelector("[data-orbita]");
+  const ctx = tela.getContext("2d");
+  let quadros = [], ultimoQ = -1;
+  const carregarOrbita = (o) => {
+    quadros = [];
+    if (!o || reduzir) return;
+    for (let i = 1; i <= o.n; i++) { const im = new Image(); im.decoding = "async"; im.src = `${o.pasta}${String(i).padStart(3, "0")}.${o.ext}`; quadros.push(im); }
+  };
   const tras = raiz.querySelector("[data-tras]");
   const frente = raiz.querySelector("[data-frente]");
   const voo = raiz.querySelector("[data-voo]");
@@ -57,6 +65,7 @@
     const cel = celular(), c = cel ? CENA.v : CENA.h;
     if (!G || G.c !== c) {
       video.poster = c.poster; video.src = c.src;
+      carregarOrbita(c.orbita); ultimoQ = -1;
       tras.style.webkitMaskImage = tras.style.maskImage = `url(${c.mascara})`;
       if (!reduzir) video.play().catch(() => {});
     }
@@ -69,6 +78,9 @@
       t = Math.min(0, Math.max(H - ch, topoH + 26 - c.topo * ch));
     }
     video.style.cssText = `left:${l}px;top:${t}px;width:${cw}px;height:${ch}px`;
+    tela.style.cssText = video.style.cssText;
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    tela.width = Math.round(cw * dpr); tela.height = Math.round(ch * dpr); ultimoQ = -1;
     const mask = `${cw}px ${ch}px`;
     tras.style.webkitMaskSize = tras.style.maskSize = mask;
     tras.style.webkitMaskPosition = tras.style.maskPosition = `${l}px ${t}px`;
@@ -92,8 +104,19 @@
     const p = progresso();
     const { ox, oy, R, cardW, bigW, alvo, D } = G;
     const giro = reduzir ? 0.6 : (agora - t0) / 1000 * 0.32 + p * 5;
-    const ex = reduzir ? 0 : ease(seg(p, 0.28, 0.44)) * (1 - ease(seg(p, 0.8, 0.95)));     // разлёт
-    const f = ease(seg(p, 0.38, 0.56)) * (1 - ease(seg(p, 0.78, 0.93)));                    // сайт к экрану
+    // 1) облёт камеры: кадры листаются прокруткой (как в бургерной), в конце — живое видео
+    const temOrbita = quadros.length > 0;
+    const fimOrb = temOrbita ? 0.2 : 0;
+    if (temOrbita) {
+      const q = Math.round(seg(p, 0, fimOrb) * (quadros.length - 1));
+      const im = quadros[q];
+      if (q !== ultimoQ && im.complete && im.naturalWidth) { ctx.drawImage(im, 0, 0, tela.width, tela.height); ultimoQ = q; }
+      tela.style.opacity = (1 - seg(p, fimOrb - 0.015, fimOrb + 0.02)).toFixed(3);
+    } else tela.style.opacity = "0";
+    // 2) карточки слетаются в шар, когда камера вышла во фронт
+    const chega = temOrbita ? ease(seg(p, fimOrb - 0.04, fimOrb + 0.1)) : 1;
+    const ex = reduzir ? 0 : ease(seg(p, 0.4, 0.52)) * (1 - ease(seg(p, 0.84, 0.95)));     // разлёт
+    const f = ease(seg(p, 0.48, 0.62)) * (1 - ease(seg(p, 0.82, 0.94)));                    // сайт к экрану
     // камера «наезжает» на человека, фон уходит в размытие
     const zoom = 1 + 0.1 * f;
     mundo.style.transform = `translate(${ox}px,${oy}px) scale(${zoom.toFixed(4)}) translate(${-ox}px,${-oy}px)`;
@@ -105,11 +128,11 @@
       // вращение шара вокруг вертикали + лёгкий наклон к зрителю
       let X = q.x * ca + q.z * sa, Z = -q.x * sa + q.z * ca, Y = q.y;
       const Y2 = Y * ci - Z * si; Z = Y * si + Z * ci; Y = Y2;
-      const rr = R * (1 + ex * 2.6 * q.voa);
+      const rr = R * (1 + ex * 2.6 * q.voa + (1 - chega) * 2.2 * q.voa);
       const k = D / (D - Z * R);   // глубина — по обычному радиусу, при разлёте карточки уходят в стороны, а не за камеру
       let sx = ox + X * rr * k, sy = oy + Y * rr * k, esc_ = k;
       let yaw = virar(Math.atan2(X, Z) * 57.3) + ex * q.gira * 160, pitch = -Y * 38 + ex * q.gira * 90;
-      let atras = Z < 0, op = 1 - ex * 0.15;
+      let atras = Z < 0, op = (1 - ex * 0.15) * chega;
       if (i === 0 && f > 0.001) {
         // стартовая точка — с учётом наезда камеры
         const bx = ox + (sx - ox) * zoom, by = oy + (sy - oy) * zoom;

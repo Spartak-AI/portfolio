@@ -491,7 +491,7 @@ p { margin: 0 0 1em; }
 }
 
 /* ── 0 · Новый первый экран: человек и шар из сайтов ─ */
-.eu { position: relative; height: 420vh; background: #d9cfc2; }
+.eu { position: relative; height: 480vh; background: #d9cfc2; }
 .eu-palco { position: sticky; top: 0; height: 100svh; overflow: hidden; }
 .eu-mundo { position: absolute; inset: 0; will-change: transform, filter; }
 .eu-video { position: absolute; object-fit: cover; max-width: none; max-height: none; }
@@ -517,7 +517,7 @@ p { margin: 0 0 1em; }
 .eu .painel h1 { font-size: clamp(30px, 2.9vw, 46px); }
 .eu-m--b .painel { max-width: 520px; }
 @media (max-width: 760px) {
-  .eu { height: 380vh; }
+  .eu { height: 440vh; }
   .eu .momento { left: 12px; right: 12px; width: auto; bottom: 14px; }
   .eu .painel { padding: 18px 18px 16px; }
   .eu .painel h2 { font-size: 24px; }
