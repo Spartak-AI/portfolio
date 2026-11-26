@@ -23,7 +23,10 @@
   const abertura = document.querySelector(".abertura");
   const leque = document.querySelector("[data-leque]");
   if (abertura && leque) {
-    const lista = (S.casos || []).slice(0, 6);
+    // новый первый экран (eu.js) включён — от старого остаётся только «до/после»
+    const soDuelo = !!S.heroNovo;
+    if (soDuelo) abertura.dataset.modo = "duelo";
+    const lista = soDuelo ? [] : (S.casos || []).slice(0, 6);
     leque.innerHTML = lista.map((c, i) => `
       <div class="mini" style="z-index:${20 - i}">
         <div class="janela-barra"><span class="janela-pontos"><i></i><i></i><i></i></span><span class="janela-url">${esc(c.url.replace(/^https?:\/\//, "").replace(/\/$/, ""))}</span></div>
@@ -100,7 +103,8 @@
     };
     const progresso = () => {
       const r = abertura.getBoundingClientRect();
-      return lim(-r.top / ((abertura.offsetHeight - innerHeight) || 1));
+      const pr = lim(-r.top / ((abertura.offsetHeight - innerHeight) || 1));
+      return soDuelo ? 0.76 + 0.24 * pr : pr;
     };
     const desenhar = (p) => {
       const cel = celular();

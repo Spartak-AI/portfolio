@@ -1,0 +1,159 @@
+/* SPARTAK LAB — новый первый экран: человек в зале, вокруг шар из сайтов.
+   Включается флагом heroNovo в config.js (иначе работает старый экран из app.js).
+   Камера стоит; движение даёт код: шар крутится, по прокрутке разлетается,
+   один сайт подлетает к экрану и оживает, затем всё собирается обратно. */
+(() => {
+  const S = window.SITE || {};
+  const raiz = document.querySelector("[data-eu]");
+  if (!raiz) return;
+  if (!S.heroNovo) { raiz.remove(); return; }
+  raiz.hidden = false;
+
+  const reduzir = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const celular = () => matchMedia("(max-width: 760px)").matches;
+  const lim = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const seg = (v, a, b) => lim((v - a) / (b - a));
+  const ease = (t) => t * t * (3 - 2 * t);
+  const mix = (a, b, t) => a + (b - a) * t;
+  const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // где стоит человек в кадре (доли кадра, замерено по силуэту)
+  const CENA = {
+    v: { src: "assets/eu/eu_v.mp4", poster: "assets/eu/eu_v.jpg", mascara: "assets/eu/mascara_v.png", ar: 0.556, cx: 0.505, topo: 0.284, pes: 0.871 },
+    h: { src: "assets/eu/eu_h.mp4", poster: "assets/eu/eu_h.jpg", mascara: "assets/eu/mascara_h.png", ar: 1.7985, cx: 0.498, topo: 0.197, pes: 0.954 },
+  };
+
+  const mundo = raiz.querySelector("[data-mundo]");
+  const video = raiz.querySelector("[data-eu-video]");
+  const tras = raiz.querySelector("[data-tras]");
+  const frente = raiz.querySelector("[data-frente]");
+  const voo = raiz.querySelector("[data-voo]");
+  const momentos = [...raiz.querySelectorAll(".momento")];
+
+  // ── карточки: каждый сайт дважды, точки ровно по сфере
+  const casos = (S.casos || []).slice(0, 6);
+  const N = Math.min(12, casos.length * 2);
+  const cartao = (c, heroi) => `
+    <div class="esf-card${heroi ? " esf-card--heroi" : ""}">
+      <div class="esf-f">
+        <div class="esf-barra"><i></i><i></i><i></i></div>
+        <div class="esf-tela"><img src="${esc(c.poster)}" alt="" loading="lazy" decoding="async">${heroi ? `<video muted loop playsinline preload="none" poster="${esc(c.poster)}"><source src="${esc(c.video)}" type="video/mp4"></video>` : ""}</div>
+      </div>
+      <div class="esf-v"></div>
+    </div>`;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = Array.from({ length: N }, (_, i) => cartao(casos[i % casos.length], i === 0)).join("");
+  const cards = [...tmp.children];
+  cards.forEach((el) => frente.appendChild(el));
+  const vHeroi = cards[0].querySelector("video");
+  const pontos = cards.map((_, i) => {
+    const y = (1 - 2 * (i + 0.5) / N) * 0.82, r = Math.sqrt(1 - y * y), t = i * 2.399963;
+    return { x: r * Math.cos(t), y, z: r * Math.sin(t), voa: 0.6 + ((i * 7919) % 100) / 100, gira: ((i * 104729) % 200) / 100 - 1 };
+  });
+
+  let G = null, W = 0, H = 0;
+  const medir = () => {
+    W = raiz.clientWidth; H = innerHeight;
+    const cel = celular(), c = cel ? CENA.v : CENA.h;
+    if (!G || G.c !== c) {
+      video.poster = c.poster; video.src = c.src;
+      tras.style.webkitMaskImage = tras.style.maskImage = `url(${c.mascara})`;
+      if (!reduzir) video.play().catch(() => {});
+    }
+    // кадр «cover»: заполняет экран, человек остаётся по центру
+    let cw = Math.max(W, H * c.ar), ch = cw / c.ar, l = (W - cw) / 2, t = (H - ch) / 2;
+    if (cel) {
+      // телефон: кадр крупнее и поднят — человек в верхней части, внизу место под текст
+      const topoH = (document.querySelector(".topo") || {}).offsetHeight || 0;
+      ch = Math.max(ch, H * 1.25); cw = ch * c.ar; l = (W - cw) / 2;
+      t = Math.min(0, Math.max(H - ch, topoH + 26 - c.topo * ch));
+    }
+    video.style.cssText = `left:${l}px;top:${t}px;width:${cw}px;height:${ch}px`;
+    const mask = `${cw}px ${ch}px`;
+    tras.style.webkitMaskSize = tras.style.maskSize = mask;
+    tras.style.webkitMaskPosition = tras.style.maskPosition = `${l}px ${t}px`;
+    const ph = (c.pes - c.topo) * ch;
+    const ox = l + c.cx * cw, oy = t + (c.topo + 0.4 * (c.pes - c.topo)) * ch;
+    const R = ph * (cel ? 0.4 : 0.46);
+    const cardW = R * (cel ? 0.52 : 0.56);
+    raiz.style.setProperty("--card-w", cardW + "px");
+    // куда подлетает сайт крупным планом
+    const bigW = cel ? W * 0.9 : Math.min(W * 0.46, 760);
+    const alvo = cel ? { x: W / 2, y: H * 0.3 } : { x: W * 0.64, y: H * 0.46 };
+    G = { c, ox, oy, R, cardW, bigW, alvo, D: R * 3.2 };
+  };
+
+  // спереди карточки почти смотрят на зрителя, сзади разворачиваются спиной — без скачков
+  const virar = (y) => { const a = Math.abs(y), s = Math.sign(y); return a <= 90 ? y * 0.55 : s * (49.5 + (a - 90) * 1.45); };
+  const progresso = () => lim(-raiz.getBoundingClientRect().top / ((raiz.offsetHeight - innerHeight) || 1));
+  let t0 = performance.now(), visivel = true, ultimoP = -1;
+
+  const desenhar = (agora) => {
+    const p = progresso();
+    const { ox, oy, R, cardW, bigW, alvo, D } = G;
+    const giro = reduzir ? 0.6 : (agora - t0) / 1000 * 0.32 + p * 5;
+    const ex = reduzir ? 0 : ease(seg(p, 0.28, 0.44)) * (1 - ease(seg(p, 0.8, 0.95)));     // разлёт
+    const f = ease(seg(p, 0.38, 0.56)) * (1 - ease(seg(p, 0.78, 0.93)));                    // сайт к экрану
+    // камера «наезжает» на человека, фон уходит в размытие
+    const zoom = 1 + 0.1 * f;
+    mundo.style.transform = `translate(${ox}px,${oy}px) scale(${zoom.toFixed(4)}) translate(${-ox}px,${-oy}px)`;
+    mundo.style.filter = f > 0.01 ? `blur(${(7 * f).toFixed(2)}px) brightness(${(1 - 0.22 * f).toFixed(3)})` : "";
+    const ca = Math.cos(giro), sa = Math.sin(giro), inc = 0.2, ci = Math.cos(inc), si = Math.sin(inc);
+
+    cards.forEach((el, i) => {
+      const q = pontos[i];
+      // вращение шара вокруг вертикали + лёгкий наклон к зрителю
+      let X = q.x * ca + q.z * sa, Z = -q.x * sa + q.z * ca, Y = q.y;
+      const Y2 = Y * ci - Z * si; Z = Y * si + Z * ci; Y = Y2;
+      const rr = R * (1 + ex * 2.6 * q.voa);
+      const k = D / (D - Z * R);   // глубина — по обычному радиусу, при разлёте карточки уходят в стороны, а не за камеру
+      let sx = ox + X * rr * k, sy = oy + Y * rr * k, esc_ = k;
+      let yaw = virar(Math.atan2(X, Z) * 57.3) + ex * q.gira * 160, pitch = -Y * 38 + ex * q.gira * 90;
+      let atras = Z < 0, op = 1 - ex * 0.15;
+      if (i === 0 && f > 0.001) {
+        // стартовая точка — с учётом наезда камеры
+        const bx = ox + (sx - ox) * zoom, by = oy + (sy - oy) * zoom;
+        sx = mix(bx, alvo.x, f); sy = mix(by, alvo.y, f);
+        esc_ = mix(k * zoom, bigW / cardW, f);
+        yaw = mix(((yaw + 540) % 360) - 180, 0, f); pitch = mix(pitch, 0, f);
+        atras = false; op = 1;
+        if (el.parentNode !== voo) voo.appendChild(el);
+      } else {
+        const alvoCam = atras ? tras : frente;
+        if (el.parentNode !== alvoCam) alvoCam.appendChild(el);
+      }
+      el.style.transform = `translate(${(sx - cardW / 2).toFixed(1)}px,${(sy - cardW * 0.25).toFixed(1)}px) scale(${esc_.toFixed(4)}) perspective(900px) rotateY(${yaw.toFixed(1)}deg) rotateX(${pitch.toFixed(1)}deg)`;
+      el.style.zIndex = String(500 + Math.round(Z * 100));
+      el.style.opacity = op.toFixed(3);
+      el.classList.toggle("esf-fundo", atras);
+    });
+
+    if (vHeroi && p !== ultimoP) {
+      if (f > 0.5 && !reduzir) {
+        if (vHeroi.preload === "none") { vHeroi.preload = "auto"; vHeroi.load(); }
+        if (vHeroi.paused) vHeroi.play().catch(() => {});
+        cards[0].classList.add("vivo");
+      } else { if (!vHeroi.paused) vHeroi.pause(); cards[0].classList.remove("vivo"); }
+    }
+    momentos.forEach((m) => {
+      const de = +m.dataset.de, ate = +m.dataset.ate;
+      m.classList.toggle("ativo", p >= de && (p < ate || ate >= 1));
+    });
+    raiz.classList.toggle("andou", p > 0.02);
+    ultimoP = p;
+  };
+
+  const tick = (agora) => {
+    if (visivel) desenhar(agora);
+    requestAnimationFrame(tick);
+  };
+  new IntersectionObserver(([e]) => {
+    visivel = e.isIntersecting;
+    if (!visivel) video.pause(); else if (!reduzir) video.play().catch(() => {});
+  }).observe(raiz);
+  addEventListener("resize", () => { medir(); desenhar(performance.now()); });
+  medir();
+  desenhar(performance.now());
+  if (reduzir) addEventListener("scroll", () => desenhar(performance.now()), { passive: true });
+  else requestAnimationFrame(tick);
+})();
