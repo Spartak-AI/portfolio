@@ -35,7 +35,20 @@
     const duelo = abertura.querySelector("[data-duelo]");
     const vDuelo = duelo && duelo.querySelector("video");
     const n = minis.length;
-    let A = [], B = [], mw = 0, mh = 0;
+    let A = [], B = [], mw = 0, mh = 0, passoC = 0, atualC = -1;
+    // телефон: играет только окно, которое сейчас по центру ленты
+    // каждое окно ненадолго замирает по центру, потом лента едет к следующему
+    const fitaC = (p) => { const f = seg(p, 0.32, 0.6) * (n - 1), k = Math.min(Math.floor(f), n - 2); return k + ease(seg(f - k, 0.35, 1)); };
+    const idxC = (p) => (p > 0.62 ? -1 : Math.round(fitaC(p)));
+    const tocarC = (idx) => {
+      if (idx === atualC) return;
+      atualC = idx;
+      videos.forEach((v, i) => {
+        if (i !== idx || reduzir) return v.pause();
+        if (v.preload === "none") { v.preload = "auto"; v.load(); }
+        v.play().catch(() => {});
+      });
+    };
 
     const medir = () => {
       const W = abertura.clientWidth, H = innerHeight, cel = celular();
@@ -56,7 +69,6 @@
       A = []; B = [];
       // на телефоне окна стоят в свободном месте над текстом, а не прижаты к верху
       const tH = (document.querySelector(".topo") || {}).offsetHeight || 0;
-      const passo = mh * 0.56 + 12;
       // окна + текст под ними — одной группой по центру экрана
       const grupo = (altura, m) => {
         if (!cel || !m) return null;
@@ -66,7 +78,8 @@
         return ini + altura / 2;
       };
       momentos.slice(0, 2).forEach((m) => { if (!cel) { m.style.top = ""; m.style.bottom = ""; } });
-      const hA = mh + 42, hB = 2 * passo + mh * 0.56;
+      passoC = mw * 1.1 + 14;
+      const hA = mh + 42, hB = mh * 1.1;
       const cA = (grupo(hA, momentos[0]) || 0) + 21;
       const cB = grupo(hB, momentos[1]) || 0;
       for (let i = 0; i < n; i++) {
@@ -74,10 +87,10 @@
         A.push(cel
           ? { x: W * 0.5 + i * 7, y: cA - i * 14, r: -2 + i * 2, s: 1 - i * 0.04, o: i < 4 ? 1 : 0 }
           : { x: W * 0.7 + i * 26, y: H * 0.5 - i * 26, r: -3 + i * 2.6, s: 1 - i * 0.035, o: 1 });
-        // конец: окна разъезжаются в стену из сайтов
-        const c = cel ? i % 2 : i % 3, l = cel ? Math.floor(i / 2) : Math.floor(i / 3);
+        // конец: на компьютере стена из сайтов, на телефоне — лента крупных окон
+        const c = i % 3, l = Math.floor(i / 3);
         B.push(cel
-          ? { x: W * (0.27 + c * 0.46), y: cB + (l - 1) * passo, r: 0, s: 0.56, o: 0.95 }
+          ? { x: W * 0.5 + i * passoC, y: cB, r: 0, s: 1.1, o: 1 }
           : { x: W * (0.2 + c * 0.3), y: H * (0.3 + l * 0.4), r: (c - 1) * 1.5, s: 0.6, o: 0.95 });
       }
     };
@@ -86,10 +99,15 @@
       return lim(-r.top / ((abertura.offsetHeight - innerHeight) || 1));
     };
     const desenhar = (p) => {
-      const t = ease(seg(p, 0.06, 0.62));
+      const cel = celular();
+      // телефон: колода раскладывается в ленту (до 0.3), затем лента едет (0.3–0.62)
+      const t = cel ? ease(seg(p, 0.06, 0.3)) : ease(seg(p, 0.06, 0.62));
+      const fita = cel ? fitaC(p) : 0;
+      const off = fita * passoC;
+      if (cel && visivel) tocarC(idxC(p));
       minis.forEach((m, i) => {
         const a = A[i], b = B[i], d = ease(lim(t * 1.25 - i * 0.05));
-        const x = mix(a.x, b.x, d), y = mix(a.y, b.y, d), r = mix(a.r, b.r, d), s = mix(a.s, b.s, d);
+        const x = mix(a.x, b.x - off, d), y = mix(a.y, b.y, d), r = mix(a.r, b.r, d), s = mix(a.s, b.s, d);
         const o = mix(a.o, b.o, d) * (1 - ease(seg(p, 0.6, 0.72)));
         m.style.transform = `translate(${(x - mw / 2).toFixed(1)}px, ${(y - mh / 2).toFixed(1)}px) rotate(${r.toFixed(2)}deg) scale(${s.toFixed(3)})`;
         m.style.opacity = o.toFixed(3);
@@ -119,8 +137,9 @@
     // видео: на компьютере играют все окна, на телефоне — только верхнее
     new IntersectionObserver(([e]) => {
       visivel = e.isIntersecting;
-      videos.forEach((v, i) => {
-        if (!visivel || reduzir || (celular() && i > 0)) return v.pause();
+      if (celular()) { atualC = -2; return tocarC(visivel ? idxC(progresso()) : -1); }
+      videos.forEach((v) => {
+        if (!visivel || reduzir) return v.pause();
         if (v.preload === "none") { v.preload = "auto"; v.load(); }
         v.play().catch(() => {});
       });
@@ -236,8 +255,26 @@
   const lista = document.querySelector("[data-nichos]");
   const previa = document.querySelector("[data-previa]");
   if (lista) {
-    lista.innerHTML = casos.map((c) => `<li><a href="#caso-${esc(c.id)}" data-poster="${esc(c.poster)}">${esc(c.nichoCurto || c.nicho)} <small>${esc(c.nome)} · ${esc(c.nicho)}</small></a></li>`).join("");
-    const links = [...lista.querySelectorAll("a")];
+    lista.innerHTML = casos.map((c) => {
+      const msg = `Здравствуйте! Хочу сайт для ниши «${c.nicho}», как ${c.nome}.`;
+      return `<li><a class="nicho-link" href="#caso-${esc(c.id)}" data-poster="${esc(c.poster)}">${esc(c.nichoCurto || c.nicho)} <small>${esc(c.nome)} · ${esc(c.nicho)}</small></a>
+        <div class="nicho-abre">
+          <img src="${esc(c.poster)}" alt="" loading="lazy">
+          <div class="caso-acoes">
+            ${c.url ? `<a class="botao botao--linha" href="${esc(c.url)}" target="_blank" rel="noopener">Открыть сайт ↗</a>` : ""}
+            <a class="botao botao--escuro js-whats" href="#contato" data-msg="${esc(msg)}">Хочу такой же</a>
+          </div>
+        </div></li>`;
+    }).join("");
+    const links = [...lista.querySelectorAll(".nicho-link")];
+    // телефон: нажатие раскрывает нишу на месте, а не уводит к «Работам»
+    links.forEach((a) => a.addEventListener("click", (ev) => {
+      if (!celular()) return;
+      ev.preventDefault();
+      const li = a.parentElement, abrir = !li.classList.contains("aberto");
+      lista.querySelectorAll("li.aberto").forEach((x) => x.classList.remove("aberto"));
+      li.classList.toggle("aberto", abrir);
+    }));
     const ativar = (a) => {
       links.forEach((l) => l.classList.toggle("ativo", l === a));
       if (previa && a) { previa.style.opacity = 0; setTimeout(() => { previa.src = a.dataset.poster; previa.style.opacity = 1; }, 120); }
