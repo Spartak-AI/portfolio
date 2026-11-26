@@ -235,7 +235,7 @@
         </div>
         <div class="caso-info">
           <span class="caso-nicho">${String(i + 1).padStart(2, "0")} · ${esc(c.nicho)}</span>
-          <h3>${esc(c.nome)}<span class="caso-demo">демо</span></h3>
+          <h3>${esc(c.nome)}</h3>
           <dl class="caso-dl">
             <div><dt>Задача клиента (JTBD)</dt><dd>${esc(c.jtbd)}</dd></div>
             <div><dt>Что закрывает сайт (CJM)</dt><dd>${esc(c.cjm)}</dd></div>

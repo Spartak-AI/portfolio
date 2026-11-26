@@ -267,7 +267,7 @@ p { margin: 0 0 1em; }
 .secao-cabeca p { color: var(--tinta-2); max-width: 560px; }
 
 /* ── 05 · Работы: стопка окон ───────────────────────── */
-.trabalhos { position: relative; overflow-x: clip; padding: clamp(96px, 14vw, 180px) var(--gut) clamp(60px, 8vw, 120px); }
+.trabalhos { position: relative; overflow-x: clip; padding: clamp(72px, 9vw, 120px) var(--gut) clamp(60px, 8vw, 120px); }
 .trabalhos .palavra-fundo { top: 140px; transform: translateX(-50%); }
 .pilha { position: relative; z-index: 1; display: grid; gap: 7vh; }
 .caso {
@@ -532,7 +532,7 @@ p { margin: 0 0 1em; }
 }
 /* старый экран в режиме «только до/после»: обычный блок, прокручивается вместе со страницей */
 .abertura[data-modo="duelo"] { height: auto; }
-.abertura[data-modo="duelo"] .abertura-palco { position: relative; height: auto; overflow: visible; padding: clamp(64px, 9vw, 120px) 0; display: flex; flex-direction: column; align-items: center; gap: 36px; }
+.abertura[data-modo="duelo"] .abertura-palco { position: relative; height: auto; overflow: visible; padding: clamp(64px, 9vw, 120px) 0 clamp(24px, 3vw, 40px); display: flex; flex-direction: column; align-items: center; gap: 36px; }
 .abertura[data-modo="duelo"] .palavra-fundo { display: none; }
 .abertura[data-modo="duelo"] .duelo { position: relative; left: auto; top: auto !important; transform: none !important; opacity: 1 !important; pointer-events: auto; }
 .abertura[data-modo="duelo"] .momento--duelo { position: relative; left: auto; right: auto; top: auto !important; bottom: auto !important; transform: none !important; opacity: 1; pointer-events: auto; }
@@ -542,5 +542,5 @@ p { margin: 0 0 1em; }
 .eu-quadros { position: absolute; z-index: 1; max-width: none; max-height: none; }
 .eu-fundo { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; filter: blur(28px) brightness(.92); transform: scale(1.15); }
 @media (max-width: 760px) {
-  .abertura[data-modo="duelo"] .abertura-palco { padding: 64px 0; gap: 24px; }
+  .abertura[data-modo="duelo"] .abertura-palco { padding: 64px 0 16px; gap: 24px; }
 }
