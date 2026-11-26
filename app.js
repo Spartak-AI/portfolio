@@ -35,7 +35,7 @@
     const duelo = abertura.querySelector("[data-duelo]");
     const vDuelo = duelo && duelo.querySelector("video");
     const n = minis.length;
-    let A = [], B = [], mw = 0, mh = 0, passoC = 0, atualC = -1;
+    let A = [], B = [], mw = 0, mh = 0, passoC = 0, atualC = -1, escDuelo = 1;
     // телефон: играет только окно, которое сейчас по центру ленты
     // каждое окно ненадолго замирает по центру, потом лента едет к следующему
     const fitaC = (p) => { const f = seg(p, 0.32, 0.6) * (n - 1), k = Math.min(Math.floor(f), n - 2); return k + ease(seg(f - k, 0.35, 1)); };
@@ -60,10 +60,14 @@
       if (duelo && pd) {
         const topoH = (document.querySelector(".topo") || {}).offsetHeight || 0;
         const gap = cel ? 28 : 36;
-        const total = duelo.offsetHeight + gap + pd.offsetHeight;
-        const ini = topoH + Math.max(8, (H - topoH - total) / 2);
+        // если сравнение и вопрос не помещаются на экран — уменьшаем сравнение
+        const livre = H - topoH - 24 - gap - pd.offsetHeight;
+        escDuelo = Math.max(0.55, Math.min(1, livre / duelo.offsetHeight));
+        const dh = duelo.offsetHeight * escDuelo;
+        const total = dh + gap + pd.offsetHeight;
+        const ini = topoH + Math.max(12, (H - topoH - total) / 2);
         duelo.style.top = ini + "px";
-        pd.style.top = (ini + duelo.offsetHeight + gap) + "px";
+        pd.style.top = (ini + dh + gap) + "px";
         pd.style.bottom = "auto";
       }
       A = []; B = [];
@@ -115,7 +119,7 @@
       if (duelo) {
         const k = ease(seg(p, 0.66, 0.8));
         duelo.style.opacity = k.toFixed(3);
-        duelo.style.transform = `translateX(-50%) translateY(${((1 - k) * 50).toFixed(1)}px)`;
+        duelo.style.transform = `translateX(-50%) translateY(${((1 - k) * 50).toFixed(1)}px) scale(${escDuelo.toFixed(3)})`;
         if (vDuelo) {
           if (k > 0.05 && !reduzir) {
             if (vDuelo.preload === "none") { vDuelo.preload = "auto"; vDuelo.load(); }
