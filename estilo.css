@@ -47,8 +47,8 @@ p { margin: 0 0 1em; }
   cursor: pointer; transition: background .25s, color .25s, border-color .25s, transform .25s;
 }
 .botao:hover { transform: translateY(-1px); }
-.botao--escuro { background: var(--tinta); color: var(--claro); }
-.botao--escuro:hover { background: var(--acento); }
+.botao--escuro { background: var(--acento); color: #fff; box-shadow: 0 12px 28px -14px rgba(179, 68, 47, .8); }
+.botao--escuro:hover { background: #943522; }
 .botao--linha { border-color: var(--tinta); color: var(--tinta); background: transparent; }
 .botao--linha:hover { background: var(--tinta); color: var(--claro); }
 .botao--claro { background: var(--claro); color: var(--tinta); }
@@ -272,8 +272,6 @@ p { margin: 0 0 1em; }
 .caso:nth-child(even) .caso-dl dd { color: rgba(236, 234, 228, .72); }
 .caso:nth-child(even) .botao--linha { border-color: var(--claro); color: var(--claro); }
 .caso:nth-child(even) .botao--linha:hover { background: var(--claro); color: var(--tinta); }
-.caso:nth-child(even) .botao--escuro { background: var(--claro); color: var(--tinta); }
-.caso:nth-child(even) .botao--escuro:hover { background: var(--acento); color: var(--claro); }
 
 /* окно браузера */
 .janela { border-radius: 12px; overflow: hidden; background: #111; box-shadow: 0 30px 70px -35px rgba(0, 0, 0, .55); }
