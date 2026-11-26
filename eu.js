@@ -113,6 +113,19 @@
     const bigW = cel ? W * 0.9 : Math.min(W * 0.46, 760);
     const alvo = cel ? { x: W / 2, y: H * 0.3 } : { x: W * 0.64, y: H * 0.46 };
     G = { c, ox, oy, R, cardW, bigW, alvo, D: R * 3.2, l, t, cw, ch };
+    // надпись «Сайт — первое, что видит клиент» — сразу под подлетевшим сайтом (телефон) / рядом по центру (компьютер)
+    const mB = raiz.querySelector(".eu-m--b");
+    if (mB) {
+      const bigH = bigW * 562 / 1280 + 24;
+      if (cel) {
+        // сайт и надпись — одной группой по центру экрана под шапкой
+        const topoH = (document.querySelector(".topo") || {}).offsetHeight || 0;
+        const grupo = bigH + 18 + mB.offsetHeight;
+        alvo.y = topoH + Math.max(12, (H - topoH - grupo) / 2) + bigH / 2;
+        mB.style.top = Math.round(alvo.y + bigH / 2 + 18) + "px"; mB.style.bottom = "auto";
+      }
+      else { mB.style.top = Math.round(alvo.y - mB.offsetHeight / 2) + "px"; mB.style.bottom = "auto"; }
+    }
   };
 
   // спереди карточки почти смотрят на зрителя, сзади разворачиваются спиной — без скачков
