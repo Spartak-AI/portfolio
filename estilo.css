@@ -529,10 +529,17 @@ p { margin: 0 0 1em; }
   .eu .acoes .botao { flex: 1 1 auto; padding: 12px 10px; font-size: 12px; min-height: 0; white-space: nowrap; }
   .esf-f, .esf-v { border-radius: 4px; }
 }
-/* старый экран в режиме «только до/после» */
-.abertura[data-modo="duelo"] { height: 170vh; }
+/* старый экран в режиме «только до/после»: обычный блок, прокручивается вместе со страницей */
+.abertura[data-modo="duelo"] { height: auto; }
+.abertura[data-modo="duelo"] .abertura-palco { position: relative; height: auto; overflow: visible; padding: clamp(64px, 9vw, 120px) 0; display: flex; flex-direction: column; align-items: center; gap: 36px; }
+.abertura[data-modo="duelo"] .palavra-fundo { display: none; }
+.abertura[data-modo="duelo"] .duelo { position: relative; left: auto; top: auto !important; transform: none !important; opacity: 1 !important; pointer-events: auto; }
+.abertura[data-modo="duelo"] .momento--duelo { position: relative; left: auto; right: auto; top: auto !important; bottom: auto !important; transform: none !important; opacity: 1; pointer-events: auto; }
 .abertura[data-modo="duelo"] .leque,
 .abertura[data-modo="duelo"] .momento:not(.momento--duelo),
 .abertura[data-modo="duelo"] .rolar { display: none; }
 .eu-quadros { position: absolute; z-index: 1; max-width: none; max-height: none; }
 .eu-fundo { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; filter: blur(28px) brightness(.92); transform: scale(1.15); }
+@media (max-width: 760px) {
+  .abertura[data-modo="duelo"] .abertura-palco { padding: 64px 0; gap: 24px; }
+}
