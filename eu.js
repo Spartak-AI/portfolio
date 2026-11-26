@@ -50,14 +50,22 @@
     <div class="esf-card${heroi ? " esf-card--heroi" : ""}">
       <div class="esf-f">
         <div class="esf-barra"><i></i><i></i><i></i></div>
-        <div class="esf-tela"><img src="${esc(c.poster)}" alt="" loading="lazy" decoding="async">${heroi ? `<video muted loop playsinline preload="none" poster="${esc(c.poster)}"><source src="${esc(c.video)}" type="video/mp4"></video>` : ""}</div>
+        <div class="esf-tela"><img src="${esc(c.poster)}" alt="" decoding="async">${heroi ? `<video muted loop playsinline preload="none" poster="${esc(c.poster)}"><source src="${esc(c.video)}" type="video/mp4"></video>` : ""}</div>
       </div>
-      <div class="esf-v"><img src="${esc(c.poster)}" alt="" loading="lazy" decoding="async"></div>
+      <div class="esf-v"><img src="${esc(c.poster)}" alt="" decoding="async"></div>
     </div>`;
   const tmp = document.createElement("div");
   tmp.innerHTML = Array.from({ length: N }, (_, i) => cartao(casos[i % casos.length], i === 0)).join("");
   const cards = [...tmp.children];
   cards.forEach((el) => frente.appendChild(el));
+  // постоянные копии для слоя «за спиной» — карточки не переносятся между слоями (иначе на телефоне моргают)
+  const tmpT = document.createElement("div");
+  tmpT.innerHTML = Array.from({ length: N }, (_, i) => cartao(casos[i % casos.length], false)).join("");
+  const cardsT = [...tmpT.children];
+  cardsT.forEach((el) => { el.classList.add("esf-fundo"); el.style.opacity = "0"; tras.appendChild(el); });
+  // силуэт поверх карточек «за спиной» во время облёта (рисуется вместе с кадром — без смены масок)
+  const pessoa = raiz.querySelector("[data-pessoa]");
+  const ctxP = pessoa.getContext("2d");
   const vHeroi = cards[0].querySelector("video");
   // широты карточек: пояс на уровне лица пропускаем, чтобы лицо всегда было открыто
   const faixas = [-0.97, -0.9, -0.02, 0.12, 0.26, 0.4, 0.54, 0.68, 0.8, 0.92];
@@ -93,6 +101,7 @@
     tela.style.cssText = video.style.cssText;
     const dpr = Math.min(2, devicePixelRatio || 1);
     tela.width = Math.round(cw * dpr); tela.height = Math.round(ch * dpr); ultimoQ = -1;
+    pessoa.style.cssText = tela.style.cssText; pessoa.width = tela.width; pessoa.height = tela.height;
     const mask = `${cw}px ${ch}px`;
     tras.style.webkitMaskSize = tras.style.maskSize = mask;
     tras.style.webkitMaskPosition = tras.style.maskPosition = `${l}px ${t}px`;
@@ -121,16 +130,25 @@
     if (temOrb && p < fimO && ancoras) {
       const qa = Math.round(seg(p, 0, fimO) * (quadros.length - 1)), a = ancoras[qa];
       if (a) { const g = geo(a); ox = g.ox; oy = g.oy; R = g.R; }
-      const url = mascaras[qa] && mascaras[qa].src;
-      if (url && url !== ultimaM) { tras.style.webkitMaskImage = tras.style.maskImage = `url(${url})`; ultimaM = url; }
-    } else if (ultimaM !== G.c.mascara) { tras.style.webkitMaskImage = tras.style.maskImage = `url(${G.c.mascara})`; ultimaM = G.c.mascara; }
+      if (ultimaM !== "none") { tras.style.webkitMaskImage = tras.style.maskImage = "none"; ultimaM = "none"; }
+    }
+    pessoa.style.opacity = temOrb && p < fimO ? tela.style.opacity : "0";
+    if ((!temOrb || p >= fimO) && ultimaM !== G.c.mascara) { tras.style.webkitMaskImage = tras.style.maskImage = `url(${G.c.mascara})`; ultimaM = G.c.mascara; }
     // 1) облёт камеры: кадры листаются прокруткой (как в бургерной), в конце — живое видео
     const temOrbita = quadros.length > 0;
     const fimOrb = temOrbita ? 0.2 : 0;
     if (temOrbita) {
       const q = Math.round(seg(p, 0, fimOrb) * (quadros.length - 1));
       const im = quadros[q];
-      if (q !== ultimoQ && im.complete && im.naturalWidth) { ctx.drawImage(im, 0, 0, tela.width, tela.height); ultimoQ = q; }
+      if (q !== ultimoQ && im.complete && im.naturalWidth) {
+        ctx.drawImage(im, 0, 0, tela.width, tela.height); ultimoQ = q;
+        const mk = mascaras[q];
+        if (mk && mk.complete && mk.naturalWidth) {
+          ctxP.globalCompositeOperation = "copy"; ctxP.drawImage(im, 0, 0, pessoa.width, pessoa.height);
+          ctxP.globalCompositeOperation = "destination-out"; ctxP.drawImage(mk, 0, 0, pessoa.width, pessoa.height);
+          ctxP.globalCompositeOperation = "source-over";
+        }
+      }
       tela.style.opacity = (1 - seg(p, fimOrb - 0.002, fimOrb + 0.002)).toFixed(3);   // почти мгновенная смена — без ореола от наложения
     } else tela.style.opacity = "0";
     // 2) карточки слетаются в шар, когда камера вышла во фронт
@@ -161,14 +179,12 @@
         yaw = mix(((yaw + 540) % 360) - 180, 0, f); pitch = mix(pitch, 0, f);
         atras = false; op = 1;
         if (el.parentNode !== voo) voo.appendChild(el);
-      } else {
-        const alvoCam = atras ? tras : frente;
-        if (el.parentNode !== alvoCam) alvoCam.appendChild(el);
-      }
-      el.style.transform = `translate(${(sx - cardW / 2).toFixed(1)}px,${(sy - cardW * 0.25).toFixed(1)}px) scale(${esc_.toFixed(4)}) perspective(900px) rotateY(${yaw.toFixed(1)}deg) rotateX(${pitch.toFixed(1)}deg)`;
-      el.style.zIndex = String(500 + Math.round(Z * 100));
-      el.style.opacity = op.toFixed(3);
-      el.classList.toggle("esf-fundo", atras);
+      } else if (el.parentNode !== frente) frente.appendChild(el);
+      const tr = `translate(${(sx - cardW / 2).toFixed(1)}px,${(sy - cardW * 0.25).toFixed(1)}px) scale(${esc_.toFixed(4)}) perspective(900px) rotateY(${yaw.toFixed(1)}deg) rotateX(${pitch.toFixed(1)}deg)`;
+      const zi = String(500 + Math.round(Z * 100)), t2 = cardsT[i];
+      el.style.transform = tr; el.style.zIndex = zi;
+      el.style.opacity = atras ? "0" : op.toFixed(3);
+      if (t2) { t2.style.transform = tr; t2.style.zIndex = zi; t2.style.opacity = atras ? op.toFixed(3) : "0"; }
     });
 
     if (vHeroi && p !== ultimoP) {

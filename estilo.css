@@ -495,7 +495,8 @@ p { margin: 0 0 1em; }
 .eu-palco { position: sticky; top: 0; height: 100svh; overflow: hidden; }
 .eu-mundo { position: absolute; inset: 0; will-change: transform, filter; }
 .eu-video { position: absolute; object-fit: cover; max-width: none; max-height: none; }
-.eu-camada { position: absolute; inset: 0; pointer-events: none; }
+.eu-camada { position: absolute; inset: 0; pointer-events: none; isolation: isolate; }
+.eu-pessoa { pointer-events: none; }
 .eu-camada--tras { -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
 .eu-camada--voo { z-index: 2; }
 .esf-card {
