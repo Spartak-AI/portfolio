@@ -20,7 +20,7 @@
   // где стоит человек в кадре (доли кадра, замерено по силуэту)
   const CENA = {
     v: { orbita: { pasta: "assets/eu/orbita_v/", n: 61, ext: "webp" }, src: "assets/eu/eu_v.mp4", poster: "assets/eu/eu_v.jpg", mascara: "assets/eu/mascara_v.png", ar: 0.556, cx: 0.505, topo: 0.284, pes: 0.871 },
-    h: { src: "assets/eu/eu_h.mp4", poster: "assets/eu/eu_h.jpg", mascara: "assets/eu/mascara_h.png", ar: 1.7985, cx: 0.498, topo: 0.197, pes: 0.954 },
+    h: { orbita: { pasta: "assets/eu/orbita_h/", n: 55, ext: "webp" }, src: "assets/eu/eu_h.mp4", poster: "assets/eu/eu_h.jpg", mascara: "assets/eu/mascara_h.png", ar: 1.7985, cx: 0.498, topo: 0.197, pes: 0.954 },
   };
 
   const mundo = raiz.querySelector("[data-mundo]");
