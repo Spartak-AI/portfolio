@@ -116,8 +116,11 @@
       // телефон: кадр крупнее и поднят — человек в верхней части, внизу место под текст
       const topoH = (document.querySelector(".topo") || {}).offsetHeight || 0;
       // как в референсе: человек ≈ половина высоты экрана, шар целиком помещается
-      ch = Math.max(ch, H * 1.0); cw = ch * c.ar; l = (W - cw) / 2;
-      t = Math.min(0, Math.max(H - ch, topoH + 26 - c.topo * ch));
+      // над куполом — «воздух» ≈6% высоты экрана; кадр увеличен ровно настолько, чтобы внизу не осталось пустоты
+      const verh = c.topo - 0.135 * (c.pes - c.topo);   // верх шара в долях кадра (центр 0.31 роста, радиус 0.445)
+      const ar_ = Math.round(H * 0.06);
+      ch = Math.max(ch, H, (H - topoH - ar_) / (1 - verh)); cw = ch * c.ar; l = (W - cw) / 2;
+      t = Math.min(0, Math.max(H - ch, topoH + ar_ - verh * ch));
     }
     video.style.cssText = `left:${l}px;top:${t}px;width:${cw}px;height:${ch}px`;
     tela.style.cssText = video.style.cssText;
